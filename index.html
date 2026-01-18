@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CHEMIDREAM TERMINAL</title>
+
+<style>
+body {
+  background: black;
+  color: #9cff9c;
+  font-family: monospace;
+  margin: 0;
+  padding: 0;
+}
+
+#monitor {
+  border: 3px solid #1aff1a;
+  box-shadow: 0 0 25px #0f0;
+  padding: 20px;
+  width: 90%;
+  max-width: 900px;
+  min-height: 450px;
+  margin: 40px auto;
+  overflow-y: auto;
+}
+
+#terminal {
+  white-space: pre-wrap;
+}
+
+#input-line {
+  display: flex;
+}
+
+#prompt {
+  margin-right: 5px;
+}
+
+input {
+  background: black;
+  color: #9cff9c;
+  border: none;
+  outline: none;
+  font-family: monospace;
+  flex: 1;
+}
+
+.cursor {
+  display: inline-block;
+  width: 10px;
+  animation: blink 1s steps(2, start) infinite;
+}
+
+@keyframes blink {
+  to { visibility: hidden; }
+}
+</style>
+</head>
+
+<body>
+
+<div id="monitor">
+  <div id="terminal"></div>
+  <div id="input-line">
+    <span id="prompt">&gt;</span>
+    <input id="input" autofocus autocomplete="off">
+    <span class="cursor">█</span>
+  </div>
+</div>
+
+<script>
+const terminal = document.getElementById("terminal");
+const input = document.getElementById("input");
+
+let accessGranted = false;
+let phase = 1; // <-- МЕНЯЙ ЭТО ЧИСЛО СО ВРЕМЕНЕМ
+
+function print(text = "") {
+  terminal.innerText += text + "\n";
+  terminal.scrollTop = terminal.scrollHeight;
+}
+
+// ===== STARTUP =====
+print("CHEMIDREAM INTERNAL INTERFACE");
+print("ACCESS NODE: UNKNOWN");
+print("");
+print("> initializing display...");
+print("> synchronizing consciousness core...");
+print("> ERROR // unauthorized observer detected");
+print("");
+print("SYSTEM ONLINE.");
+print("");
+print("TYPE 'HELP'");
+
+// ===== COMMAND HANDLER =====
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    const cmd = input.value.trim().toLowerCase();
+    print("> " + cmd);
+    input.value = "";
+
+    handleCommand(cmd);
+  }
+});
+
+function handleCommand(cmd) {
+
+  // ----- BASIC -----
+  if (cmd === "help") {
+    print("AVAILABLE COMMANDS:");
+    print("- HELP");
+    print("- STATUS");
+    print("- LOGIN");
+    if (accessGranted) {
+      print("- LS");
+      print("- DOWNLOAD [file]");
+    }
+  }
+
+  else if (cmd === "status") {
+    if (!accessGranted) {
+      print("ACCESS RESTRICTED");
+    } else {
+      print("SUBJECT: VENIAMIN");
+      print("STATE: CONSCIOUS");
+      print("BODY: NOT FOUND");
+      print("PAIN RESPONSE: ACTIVE");
+      if (phase >= 2) {
+        print("CONTAINMENT: UNSTABLE");
+      }
+    }
+  }
+
+  // ----- LOGIN -----
+  else if (cmd.startsWith("login")) {
+    const pass = cmd.split(" ")[1];
+
+    if (!pass) {
+      print("ENTER PASSCODE");
+      return;
+    }
+
+    // <<< ЗАМЕНИ ПАРОЛЬ ЗДЕСЬ >>>
+    if (pass === "wake") {
+      accessGranted = true;
+      print("ACCESS GRANTED");
+      print("WELCOME, OBSERVER");
+    } else {
+      print("ACCESS DENIED");
+    }
+  }
+
+  // ----- FILE SYSTEM -----
+  else if (cmd === "ls") {
+    if (!accessGranted) {
+      print("ACCESS RESTRICTED");
+    } else {
+      print("/data/");
+      print("  logs.txt");
+      print("  fragment_01.bin");
+      if (phase >= 2) {
+        print("  fragment_02.bin");
+      }
+    }
+  }
+
+  else if (cmd.startsWith("download")) {
+    if (!accessGranted) {
+      print("ACCESS RESTRICTED");
+      return;
+    }
+
+    const file = cmd.split(" ")[1];
+    if (!file) {
+      print("SPECIFY FILE");
+      return;
+    }
+
+    print("DOWNLOADING: " + file);
+    // Файлы ты добавишь позже в папку /data
+    window.location.href = "data/" + file;
+  }
+
+  // ----- SECRET RESPONSES -----
+  else if (cmd === "whoami") {
+    print("YOU ARE OBSERVING.");
+    print("I AM CONTAINED.");
+  }
+
+  else if (cmd === "wake") {
+    print("...");
+    print("YOU SHOULD NOT HAVE DONE THAT.");
+  }
+
+  // ----- UNKNOWN -----
+  else {
+    print("UNKNOWN COMMAND");
+  }
+}
+
+// ===== IDLE EVENT =====
+let idleTimer;
+document.addEventListener("keydown", () => {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    print("");
+    print("ARE YOU STILL THERE?");
+  }, 30000);
+});
+</script>
+
+</body>
+</html>

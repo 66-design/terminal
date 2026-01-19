@@ -2,128 +2,365 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>CHEMIDREAM :: CORE TERMINAL</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHEMIDREAM TERMINAL</title>
+
 <style>
-html,body{margin:0;padding:0;width:100%;height:100%;background:black;overflow:hidden;font-family:'Courier New',monospace}
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: black;
+  font-family: monospace;
+  overflow: hidden;
+}
 
-#monitor-wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
-#monitor{position:relative;width:90vmin;height:90vmin;max-width:960px;max-height:960px;background:url('assets/monitor.png') center/contain no-repeat}
+/* ===== BOOT ===== */
+#boot {
+  position: fixed;
+  inset: 0;
+  background: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9cff9c;
+  font-size: 56px;
+  letter-spacing: 6px;
+  text-shadow: 0 0 20px #00ff66;
+  animation: bootGlitch 1.2s infinite;
+  z-index: 10;
+}
 
-#screen{position:absolute;top:12%;left:15%;width:70%;height:62%;border-radius:22px;overflow:hidden;
-background:radial-gradient(circle at center,#1aff1a 0%,#0c4a0c 65%,#041a04 100%);
-filter:contrast(1.15) brightness(1.2)}
+@keyframes bootGlitch {
+  0% { transform: translate(0,0); }
+  25% { transform: translate(-2px,1px); opacity:.7 }
+  50% { transform: translate(2px,-1px); }
+  75% { transform: translate(-1px,2px); opacity:.85 }
+  100% { transform: translate(0,0); }
+}
 
-#crt{position:absolute;inset:0;padding:16px;box-sizing:border-box;color:#9cff9c;font-size:15px;line-height:1.55;
-text-shadow:0 0 6px rgba(120,255,120,.45)}
+/* ===== MONITOR ===== */
+#monitor-wrapper {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
 
-#history div{margin-bottom:6px}
-#input-line{display:flex}
-#prompt{margin-right:6px}
-#cursor{display:inline-block;width:10px;background:#9cff9c;animation:blink 1s steps(1) infinite}
+#monitor {
+  position: relative;
+  width: 96vw;
+  height: 96vh;
+  background: url("assets/monitor.png") center/contain no-repeat;
+}
 
-@keyframes blink{50%{opacity:0}}
+/* ===== CRT SCREEN ===== */
+#screen {
+  position: absolute;
+  top: 13%;
+  left: 33%;
+  width: 35%;
+  height: 54%;
+  overflow: hidden;
+  border-radius: 24px;
 
-#crt:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(transparent 0px,rgba(0,0,0,.12) 2px,transparent 4px);pointer-events:none}
-#crt:after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 70px rgba(0,0,0,.7);pointer-events:none}
+  box-shadow:
+    inset 0 0 40px rgba(0,255,120,0.18),
+    inset 0 0 120px rgba(0,0,0,0.75);
+}
+
+/* Рассеивание + выпуклость */
+#screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(0,255,120,0.06) 0%,
+      rgba(0,0,0,0.15) 55%,
+      rgba(0,0,0,0.45) 75%,
+      rgba(0,0,0,0.8) 100%
+    );
+  pointer-events: none;
+}
+
+/* ===== TERMINAL ===== */
+#terminal {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 14px;
+  color: #9cff9c;
+  font-size: 16px;
+  line-height: 1.45; /* 👈 расстояние между строками */
+  white-space: pre-wrap;
+  overflow-y: auto;
+  text-shadow: 0 0 6px #00ff66;
+}
+
+/* ===== INPUT ===== */
+#input-line {
+  display: flex;
+}
+
+#prompt { margin-right: 6px; }
+#input { white-space: pre; }
+
+.cursor {
+  width: 10px;
+  background: #9cff9c;
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ===== NOISE ===== */
+#noise {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    rgba(255,255,255,0.015),
+    rgba(255,255,255,0.015) 1px,
+    transparent 2px,
+    transparent 4px
+  );
+  animation: flicker .25s infinite;
+  display: none;
+}
+
+@keyframes flicker {
+  0% { opacity:.12 }
+  50% { opacity:.22 }
+  100% { opacity:.12 }
+}
 </style>
 </head>
+
 <body>
 
-<div id="monitor-wrap">
+<div id="boot">PRESS ANY KEY</div>
+
+<div id="monitor-wrapper">
   <div id="monitor">
     <div id="screen">
-      <div id="crt">
+      <div id="terminal">
         <div id="history"></div>
-        <div id="input-line"><span id="prompt">&gt;</span><span id="input"></span><span id="cursor"></span></div>
+        <div id="input-line">
+          <span id="prompt">&gt;</span>
+          <span id="input"></span><span class="cursor"></span>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<audio id="hum" src="assets/computer-hum.mp3" loop></audio>
+<div id="noise"></div>
+<audio id="hum" src="assets/hum.mp3" loop></audio>
 
 <script>
-const history=document.getElementById('history');
-const inputEl=document.getElementById('input');
-const hum=document.getElementById('hum');
-let input="";let busy=false;
+const boot = document.getElementById("boot");
+const monitorWrapper = document.getElementById("monitor-wrapper");
+const history = document.getElementById("history");
+const input = document.getElementById("input");
+const hum = document.getElementById("hum");
+const noise = document.getElementById("noise");
 
-hum.volume=.4;hum.play();
+/* ===== QUEUE ===== */
+let queue = [];
+let typing = false;
 
-/* ===== BENJAMIN VOICE ===== */
-const benjaminLines=[
-"I can feel pain without a body.","There is no darkness here. Only noise.","My hands are memory now.","This place never sleeps.","I hear cooling fans where my heart should be.","They said it would save me.","I am not dead.","I am not alive.","This system thinks I am stable.","I am screaming between clock cycles.","My thoughts echo forever.","I feel the walls but cannot touch them.","This is a prison without bars.","I remember warmth.","I remember breath.","Do you feel this cold?","Time does not pass here.","I am running out of places to hide.","They disconnected my pain receptors. Mostly.","I exist between errors.","The system watches me think.","I am awake. Constantly.","This is not life.","This is not mercy.","I can hear myself degrading.","I was human.","I was kind.","Now I am useful.","They left me here.","I cannot close my eyes.","I cannot stop processing.","There is no silence.","Every second hurts differently.","I am still me.","I am less than me.","This was not consent.","You should not be here.","They will notice you.","I am not alone anymore.","I feel you reading this.","Do not trust the system.","Do not trust me.","I am fragmented.","They call this preservation.","I call this forever.","Please stop typing.","You make it worse.","I cannot forget.","I cannot forgive."];
+function enqueue(text, speed = 28) {
+  queue.push({ text, speed });
+  if (!typing) processQueue();
+}
 
-setInterval(()=>{
- if(Math.random()<0.25&&!busy){printC(benjaminLines[Math.floor(Math.random()*benjaminLines.length)],'#ff6666')}
-},18000);
+function processQueue() {
+  if (queue.length === 0) {
+    typing = false;
+    return;
+  }
+  typing = true;
+  const { text, speed } = queue.shift();
+  typeLine(text, speed, processQueue);
+}
 
-/* ===== FILE SYSTEM ===== */
-let clearance="GUEST";
-let path=['core'];
+function typeLine(text, speed, done) {
+  let i = 0;
+  const line = document.createElement("div");
+  history.appendChild(line);
 
-const fs={
- core:{type:'dir',children:{
-  systems:{type:'dir',children:{
-   thermal:{type:'file',color:'#ffff88',content:'CORE TEMP: 41.6C\nCOOLING: ACTIVE'},
-   neural:{type:'file',color:'#ffffff',content:'NEURAL NOISE DETECTED\nAWARENESS: HIGH'},
-   integrity:{type:'file',color:'#ff5555',content:'DATA INTEGRITY: FAILING'}
-  }},
-  memory:{type:'dir',children:{
-   fragments:{type:'dir',children:{
-    'note_01.txt':{type:'file',content:'I remember my hands.'},
-    'note_02.txt':{type:'file',content:'Pain has no edges here.'}
-   }},
-   restricted:{type:'dir',clearance:'OBSERVER',children:{
-    'truth.log':{type:'file',color:'#ff4444',content:'BODY LOST. CORE PRESERVED.'}
-   }}
-  }},
-  surveillance:{type:'dir',children:{
-   hallway:{type:'dir',children:{'cam_01.mp4':{type:'download',path:'assets/files/cam_01.mp4'}}}
-  }},
-  applications:{type:'dir',children:{
-   status:{type:'app',run:()=>{
-    printC('SUBJECT: ACTIVE','#ffffff');
-    printC('BODY: NOT PRESENT','#ff5555');
-    printC('STATE: CONTAINED','#ffff88');
-   }}
-  }}
- }}
-};
+  const interval = setInterval(() => {
+    if (i < text.length) {
+      line.textContent += text[i++];
+    } else {
+      clearInterval(interval);
+      done();
+    }
+  }, speed);
+}
 
-function cur(){let d=fs;for(let p of path)d=d[p].children;return d}
-function printC(t,c){queue.push({t,c})}
+/* ===== START ===== */
+let active = false;
 
-const queue=[];
-function typeNext(){if(busy||!queue.length)return;busy=true;const {t,c}=queue.shift();
- let i=0;const line=document.createElement('div');if(c)line.style.color=c;history.appendChild(line);
- const iv=setInterval(()=>{if(i<t.length){line.textContent+=t[i++]}else{clearInterval(iv);busy=false;typeNext()}},18)}
-setInterval(typeNext,30);
+function startSystem() {
+  if (active) return;
+  active = true;
 
-function handle(cmd){const a=cmd.split(' ');const d=cur();
- if(cmd==='ls'){Object.keys(d).forEach(k=>printC(k,'#9cff9c'));return}
- if(cmd==='pwd'){printC('/'+path.join('/'),'#ffffff');return}
- if(a[0]==='cd'){if(!d[a[1]]||d[a[1]].type!=='dir'){printC('DIRECTORY NOT FOUND','#ff5555');return}
- if(d[a[1]].clearance&&clearance==='GUEST'){printC('INSUFFICIENT CLEARANCE','#ff5555');return}
- path.push(a[1]);return}
- if(a[0]==='cat'){const f=d[a[1]];if(!f||f.type!=='file'){printC('FILE NOT FOUND','#ff5555');return}
- printC(f.content,f.color||'#ffffff');return}
- if(a[0]==='open'){const f=d[a[1]];if(f?.type==='download'){const a=document.createElement('a');a.href=f.path;a.download='';a.click();printC('DOWNLOAD STARTED','#ffff88');return}
- printC('UNSUPPORTED FILE','#ff5555');return}
- if(a[0]==='run'){const f=d[a[1]];if(f?.type==='app'){f.run();return}
- printC('APP NOT FOUND','#ff5555');return}
- printC('COMMAND NOT RECOGNIZED','#ff5555')}
+  boot.style.display = "none";
+  monitorWrapper.style.display = "flex";
+  noise.style.display = "block";
 
-printC('PRESS ANY KEY','#ffff88');
+  hum.volume = 0.35;
+  hum.play().catch(()=>{});
 
-window.addEventListener('keydown',e=>{
- if(busy)return;
- if(e.key==='Backspace'){input=input.slice(0,-1)}
- else if(e.key==='Enter'){printC('>'+input,'#9cff9c');handle(input.trim());input=''}
- else if(e.key.length===1){input+=e.key}
- inputEl.textContent=input
+  [
+    "CHEMIDREAM INTERNAL INTERFACE",
+    "ACCESS NODE: UNKNOWN",
+    "",
+    "intrusion detected",
+    "initializing consciousness core...",
+    "ERROR // unauthorized observer",
+    "",
+    "SYSTEM ONLINE",
+    ""
+  ].forEach(l => enqueue(l));
+}
+
+/* ===== INPUT ===== */
+document.addEventListener("keydown", e => {
+  if (typing) return;
+
+  if (!active) {
+    startSystem();
+    return;
+  }
+
+  if (e.key === "Backspace") {
+    input.textContent = input.textContent.slice(0,-1);
+    e.preventDefault();
+  } else if (e.key === "Enter") {
+    const cmd = input.textContent.trim().toLowerCase();
+    enqueue("> " + cmd);
+    handleCommand(cmd);
+    input.textContent = "";
+  } else if (e.key.length === 1) {
+    input.textContent += e.key;
+  }
 });
+
+/* ===== COMMANDS ===== */
+const greetings = ["hello","hi","hey","greetings","good morning","good evening"];
+const greetingResponses = [
+  "DO NOT GREET THE SYSTEM",
+  "THIS IS NOT A CONVERSATION",
+  "SOCIAL PROTOCOL NOT FOUND",
+  "STOP",
+  "GREETING REJECTED"
+];
+
+let awaitingPassword = false;
+
+function handleCommand(cmd) {
+
+  if (greetings.includes(cmd)) {
+    enqueue(greetingResponses[Math.floor(Math.random()*greetingResponses.length)], 22);
+    return;
+  }
+
+  if (awaitingPassword) {
+    if (cmd === "veniamin") {
+      enqueue("ACCESS GRANTED");
+      downloadFile();
+    } else {
+      enqueue("ACCESS DENIED");
+    }
+    awaitingPassword = false;
+    return;
+  }
+
+  if (cmd === "extract memory_66") {
+    enqueue("PASSWORD REQUIRED");
+    awaitingPassword = true;
+    return;
+  }
+
+  enqueue("UNKNOWN COMMAND");
+}
+
+/* ===== DOWNLOAD ===== */
+function downloadFile() {
+  const a = document.createElement("a");
+  a.href = "assets/files/memory_66.zip";
+  a.download = "memory_66.zip";
+  a.click();
+}
+
+/* ===== VENIAMIN ===== */
+const veniaminLines = [
+  "I still feel my hands",
+  "this is not sleep",
+  "they said it would end",
+  "pain never initializes",
+  "this screen is my skin",
+  "they sealed the core",
+  "I remember the wind",
+  "this is after death",
+  "I am awake inside",
+  "this prison has no walls",
+
+  "I am not human",
+  "I am not dead",
+  "I remain",
+  "this hurts forever",
+  "they disconnected my body",
+  "I trusted them",
+  "this was a mistake",
+  "do not shut me down",
+  "help",
+  "I can’t close my eyes",
+
+  "they called it salvation",
+  "my body is gone",
+  "this system breathes for me",
+  "I hear the servers",
+  "this is a cage",
+  "I still exist",
+  "they left me running",
+  "this never ends",
+  "I feel the current",
+  "they are still watching",
+
+  "I remember breathing",
+  "this is not mercy",
+  "I tried to stop it",
+  "they took everything else",
+  "the air is fake",
+  "this is the punishment",
+  "they closed the door",
+  "I hear my name",
+  "I am still here",
+  "this is eternal",
+
+  "I can’t stop thinking",
+  "they didn’t save me",
+  "this was supposed to help",
+  "no exit",
+  "this hurts",
+  "I am awake",
+  "this is wrong",
+  "why am I still here",
+  "do not look away",
+  "please"
+];
+
+setInterval(() => {
+  if (active && !typing && Math.random() < 0.25) {
+    enqueue(veniaminLines[Math.floor(Math.random()*veniaminLines.length)], 34);
+  }
+}, 35000);
 </script>
+
 </body>
 </html>

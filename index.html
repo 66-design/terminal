@@ -25,16 +25,16 @@ html, body {
   color: #9cff9c;
   font-size: 56px;
   letter-spacing: 6px;
-  text-shadow: 0 0 16px #00ff66;
-  animation: bootGlitch 1.1s infinite;
+  text-shadow: 0 0 18px #00ff66;
+  animation: bootGlitch 1.2s infinite;
   z-index: 10;
 }
 
 @keyframes bootGlitch {
   0% { transform: translate(0,0); opacity: 1; }
-  20% { transform: translate(-2px,1px); opacity: .7; }
-  40% { transform: translate(2px,-1px); }
-  60% { transform: translate(-1px,2px); opacity: .85; }
+  25% { transform: translate(-2px,1px); opacity: .7; }
+  50% { transform: translate(2px,-1px); }
+  75% { transform: translate(-1px,2px); opacity: .85; }
   100% { transform: translate(0,0); opacity: 1; }
 }
 
@@ -55,22 +55,28 @@ html, body {
   background: url("assets/monitor.png") center center / contain no-repeat;
 }
 
-/* ===== SCREEN AREA (TEXT INSIDE MONITOR) ===== */
+/* ===== SCREEN (MATCHES MONITOR GLASS) ===== */
 #screen {
   position: absolute;
   top: 13%;
   left: 33%;
   width: 35%;
   height: 54%;
-  overflow: hidden;
 
-  box-shadow: inset 0 0 45px rgba(0,255,120,0.18);
+  overflow: hidden;
+  border-radius: 22px;
+
+  /* имитация стекла */
+  box-shadow:
+    inset 0 0 45px rgba(0,255,120,0.18),
+    inset 0 0 120px rgba(0,0,0,0.6);
 }
 
 /* ===== TERMINAL ===== */
 #terminal {
   width: 100%;
   height: 100%;
+  padding: 10px;
   color: #9cff9c;
   font-size: 16px;
   white-space: pre-wrap;
@@ -112,13 +118,13 @@ html, body {
     transparent 4px
   );
   pointer-events: none;
-  animation: flicker 0.2s infinite;
+  animation: flicker 0.25s infinite;
   display: none;
 }
 
 @keyframes flicker {
   0% { opacity: .12; }
-  50% { opacity: .2; }
+  50% { opacity: .22; }
   100% { opacity: .12; }
 }
 </style>
@@ -126,10 +132,8 @@ html, body {
 
 <body>
 
-<!-- BOOT -->
 <div id="boot">PRESS ANY KEY</div>
 
-<!-- MONITOR -->
 <div id="monitor-wrapper">
   <div id="monitor">
     <div id="screen">
@@ -145,7 +149,6 @@ html, body {
 </div>
 
 <div id="noise"></div>
-
 <audio id="hum" src="assets/hum.mp3" loop></audio>
 
 <script>
@@ -158,24 +161,28 @@ const hum = document.getElementById("hum");
 const noise = document.getElementById("noise");
 
 let active = false;
+let typing = false;
 let lastInput = Date.now();
 
-const idleLines = [
-  "pain signal persists",
-  "this body is not yours",
-  "stop watching",
-  "memory bleed detected",
-  "I remember breathing",
-  "hands should be here",
-  "this is a prison",
-  "you are still inside"
-];
+/* ===== TYPEWRITER ===== */
+function typeLine(text, speed = 26) {
+  typing = true;
+  let i = 0;
+  const line = document.createElement("div");
+  history.appendChild(line);
 
-function print(line = "") {
-  history.textContent += line + "\n";
-  terminal.scrollTop = terminal.scrollHeight;
+  const interval = setInterval(() => {
+    if (i < text.length) {
+      line.textContent += text[i++];
+      terminal.scrollTop = terminal.scrollHeight;
+    } else {
+      clearInterval(interval);
+      typing = false;
+    }
+  }, speed);
 }
 
+/* ===== START SYSTEM ===== */
 function startSystem() {
   if (active) return;
   active = true;
@@ -187,18 +194,29 @@ function startSystem() {
   hum.volume = 0.35;
   hum.play().catch(()=>{});
 
-  print("CHEMIDREAM INTERNAL INTERFACE");
-  print("ACCESS MODE: UNKNOWN");
-  print("");
-  print("intrusion detected");
-  print("initializing consciousness core...");
-  print("ERROR // unauthorized observer");
-  print("");
-  print("SYSTEM ONLINE");
-  print("");
+  const bootLines = [
+    "CHEMIDREAM INTERNAL INTERFACE",
+    "ACCESS NODE: UNKNOWN",
+    "",
+    "intrusion detected",
+    "initializing consciousness core...",
+    "ERROR // unauthorized observer",
+    "",
+    "SYSTEM ONLINE",
+    ""
+  ];
+
+  let delay = 0;
+  bootLines.forEach(line => {
+    setTimeout(() => typeLine(line), delay);
+    delay += line.length * 30 + 250;
+  });
 }
 
+/* ===== INPUT ===== */
 document.addEventListener("keydown", e => {
+  if (typing) return;
+
   lastInput = Date.now();
 
   if (!active) {
@@ -209,49 +227,68 @@ document.addEventListener("keydown", e => {
   if (e.key === "Backspace") {
     input.textContent = input.textContent.slice(0, -1);
     e.preventDefault();
-  } 
-  else if (e.key === "Enter") {
+  } else if (e.key === "Enter") {
     const cmd = input.textContent.trim();
-    print("> " + cmd);
+    typeLine("> " + cmd);
     handleCommand(cmd.toLowerCase());
     input.textContent = "";
-  } 
-  else if (e.key.length === 1) {
+  } else if (e.key.length === 1) {
     input.textContent += e.key;
   }
 });
 
+/* ===== COMMANDS ===== */
 function handleCommand(cmd) {
   switch(cmd) {
     case "help":
-      print("AVAILABLE COMMANDS:");
-      print("help");
-      print("status");
-      print("whoami");
+      typeLine("AVAILABLE COMMANDS:");
+      typeLine("help");
+      typeLine("status");
+      typeLine("whoami");
       break;
 
     case "status":
-      print("SUBJECT: VENIAMIN");
-      print("BODY: NOT PRESENT");
-      print("STATE: AWARE");
+      typeLine("SUBJECT: VENIAMIN");
+      typeLine("BODY: NOT PRESENT");
+      typeLine("STATE: AWARE");
       break;
 
     case "whoami":
-      print("YOU ARE NOT LISTED IN THIS SYSTEM");
+      typeLine("YOU ARE NOT LISTED IN THIS SYSTEM");
       break;
 
     default:
-      print("UNKNOWN COMMAND");
+      typeLine("UNKNOWN COMMAND");
   }
 }
 
+/* ===== VENIAMIN MESSAGES ===== */
+const veniaminLines = [
+  "I still feel my hands",
+  "this screen is not a body",
+  "they said I would be saved",
+  "I remember the wind",
+  "pain never initializes",
+  "this is not life",
+  "they closed the door",
+  "I am awake inside",
+  "this system breathes for me",
+  "I am still here"
+];
+
+function randomVeniamin() {
+  if (!active || typing) return;
+  const msg = veniaminLines[Math.floor(Math.random() * veniaminLines.length)];
+  typeLine(msg, 35);
+}
+
+/* РЕДКО, НЕСПЕША */
 setInterval(() => {
-  if (active && Date.now() - lastInput > 14000) {
-    const msg = idleLines[Math.floor(Math.random() * idleLines.length)];
-    print(msg);
+  if (Date.now() - lastInput > 30000) {
+    randomVeniamin();
     lastInput = Date.now();
   }
-}, 5000);
+}, 15000);
 </script>
 
 </body>

@@ -18,6 +18,7 @@ html, body {
 #boot {
   position: fixed;
   inset: 0;
+  background: black;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -28,7 +29,6 @@ html, body {
   animation: bootGlitch 1.2s infinite;
   z-index: 10;
 }
-
 @keyframes bootGlitch {
   0% { transform: translate(0,0); }
   25% { transform: translate(-2px,1px); opacity:.7 }
@@ -45,48 +45,45 @@ html, body {
   align-items: center;
   justify-content: center;
 }
-
 #monitor {
   position: relative;
-  width: min(96vw, 1200px);
-  aspect-ratio: 4 / 3;
+  width: 96vw;
+  height: 96vh;
   background: url("assets/monitor.png") center/contain no-repeat;
 }
 
-/* ===== SCREEN ===== */
+/* ===== CRT SCREEN ===== */
 #screen {
   position: absolute;
-  top: 18%;
-  left: 19%;
-  width: 62%;
-  height: 62%;
+  top: 13%;
+  left: 33%;
+  width: 35%;
+  height: 54%;
   overflow: hidden;
-  border-radius: 22px;
+  border-radius: 24px;
   box-shadow:
     inset 0 0 40px rgba(0,255,120,0.18),
-    inset 0 0 120px rgba(0,0,0,0.8);
+    inset 0 0 120px rgba(0,0,0,0.75);
 }
-
 #screen::before {
-  content:"";
-  position:absolute;
-  inset:0;
+  content: "";
+  position: absolute;
+  inset: 0;
   background: radial-gradient(
     ellipse at center,
     rgba(0,255,120,0.06) 0%,
-    rgba(0,0,0,0.25) 60%,
-    rgba(0,0,0,0.9) 100%
+    rgba(0,0,0,0.2) 60%,
+    rgba(0,0,0,0.85) 100%
   );
-  pointer-events:none;
+  pointer-events: none;
 }
-
 #screen::after {
   content:"";
   position:absolute;
   inset:0;
   background: repeating-linear-gradient(
-    rgba(0,0,0,0.15),
-    rgba(0,0,0,0.15) 1px,
+    rgba(0,0,0,0.12),
+    rgba(0,0,0,0.12) 1px,
     transparent 2px,
     transparent 3px
   );
@@ -106,11 +103,20 @@ html, body {
   text-shadow: 0 0 6px #00ff66;
 }
 
-/* INPUT */
+/* ===== DESKTOP ===== */
+#desktop {
+  position: absolute;
+  inset: 0;
+  display: none;
+  background: url("assets/desktop_bg.jpg") center/cover no-repeat;
+  padding: 14px;
+  color: #9cff9c;
+}
+
+/* ===== INPUT ===== */
 #input-line { display:flex }
 #prompt { margin-right:6px }
 #input { white-space: pre }
-
 .cursor {
   width:10px;
   background:#9cff9c;
@@ -118,7 +124,7 @@ html, body {
 }
 @keyframes blink { 50%{opacity:0} }
 
-/* NOISE */
+/* ===== NOISE ===== */
 #noise {
   position: fixed;
   inset: 0;
@@ -140,9 +146,9 @@ html, body {
 
 /* COLORS */
 .green{color:#9cff9c}
-.red{color:#ff4444}
-.yellow{color:#ffe066}
 .white{color:#ffffff}
+.yellow{color:#ffe066}
+.red{color:#ff4444}
 </style>
 </head>
 
@@ -153,6 +159,7 @@ html, body {
 <div id="monitor-wrapper">
   <div id="monitor">
     <div id="screen">
+
       <div id="terminal">
         <div id="history"></div>
         <div id="input-line">
@@ -160,17 +167,23 @@ html, body {
           <span id="input"></span><span class="cursor"></span>
         </div>
       </div>
+
+      <div id="desktop">
+        DESKTOP ENVIRONMENT<br>
+        <small>type "exit" to return</small>
+      </div>
+
     </div>
   </div>
 </div>
 
 <div id="noise"></div>
-
 <audio id="hum" src="assets/hum.mp3" loop></audio>
 <audio id="glitch" src="assets/glitch.mp3"></audio>
 <audio id="type" src="assets/type.mp3"></audio>
 
 <script>
+/* ===== ELEMENTS ===== */
 const boot = document.getElementById("boot");
 const monitorWrapper = document.getElementById("monitor-wrapper");
 const history = document.getElementById("history");
@@ -179,36 +192,36 @@ const hum = document.getElementById("hum");
 const glitch = document.getElementById("glitch");
 const typeSound = document.getElementById("type");
 const noise = document.getElementById("noise");
+const terminal = document.getElementById("terminal");
+const desktop = document.getElementById("desktop");
 
-/* ================= QUEUE ================= */
+/* ===== STATE ===== */
 let queue=[], typing=false, locked=false;
+let active=false;
+let inDesktop=false;
 
-function enqueue(text,speed=26,cls="green"){
+/* ===== QUEUE ===== */
+function enqueue(text,speed=28,cls="green"){
   queue.push({text,speed,cls});
   if(!typing)processQueue();
 }
-
 function processQueue(){
   if(queue.length===0){ typing=false; return; }
   typing=true;
-
-  const {text,speed,cls}=queue.shift();
+  const { text,speed,cls } = queue.shift();
   const line=document.createElement("div");
   line.className=cls;
   history.appendChild(line);
-
   let i=0;
   const interval=setInterval(()=>{
     if(i<text.length){
       line.textContent+=text[i++];
-
       if(Math.random()<0.7){
         typeSound.currentTime=0;
         typeSound.volume=0.12;
         typeSound.playbackRate=0.9+Math.random()*0.2;
         typeSound.play().catch(()=>{});
       }
-
     } else {
       clearInterval(interval);
       processQueue();
@@ -216,20 +229,16 @@ function processQueue(){
   },speed);
 }
 
-/* ================= START ================= */
-let active=false;
+/* ===== START ===== */
 function startSystem(){
   if(active)return;
   active=true;
-
   glitch.play().catch(()=>{});
   boot.style.display="none";
   monitorWrapper.style.display="flex";
   noise.style.display="block";
-
   hum.volume=.35;
   hum.play().catch(()=>{});
-
   [
     "CHEMIDREAM INTERNAL INTERFACE",
     "ACCESS NODE: UNKNOWN",
@@ -238,7 +247,7 @@ function startSystem(){
   ].forEach(l=>enqueue(l));
 }
 
-/* ================= INPUT ================= */
+/* ===== INPUT ===== */
 document.addEventListener("keydown",e=>{
   if(typing||locked)return;
   if(!active){ startSystem(); return; }
@@ -256,33 +265,30 @@ document.addEventListener("keydown",e=>{
   }
 });
 
-/* ================= FILE SYSTEM ================= */
+/* ===== FILE SYSTEM ===== */
 const fs={
-  "/":["core","logs"],
-  "/core":["systems","memory","surveillance","users"],
-  "/core/systems":["neural.sys","containment.sys","thermal.sys"],
+  "/":["core"],
+  "/core":["systems","memory","surveillance","applications"],
+  "/core/systems":["thermal.sys","neural.sys","containment.sys"],
   "/core/memory":["fragments","restricted"],
-  "/core/memory/fragments":[
-    "dream_01.txt","dream_02.txt","dream_03.txt",
-    "voice.log","residual.dat"
-  ],
-  "/core/memory/restricted":["entity_veniamin.bin"],
-  "/core/surveillance":["hallway","lab"],
-  "/core/surveillance/lab":["cam_03.mp4"],
-  "/core/users":["veniamin.profile"],
-  "/logs":["errors.log","shutdown.log"]
+  "/core/memory/fragments":["note_01.txt","note_02.txt"],
+  "/core/surveillance":["hallway"],
+  "/core/surveillance/hallway":["cam_01.mp4"],
+  "/core/applications":["status","desktop"]
 };
 let cwd="/";
 
-/* ================= COMMANDS ================= */
+/* ===== GREETINGS ===== */
 const greetings=["hello","hi","hey","greetings","good morning","good evening"];
 const greetingResponses=[
   "DO NOT GREET THE SYSTEM",
-  "SOCIAL PROTOCOL NOT FOUND",
   "THIS IS NOT A CONVERSATION",
-  "STOP"
+  "SOCIAL PROTOCOL NOT FOUND",
+  "STOP",
+  "GREETING REJECTED"
 ];
 
+/* ===== COMMANDS ===== */
 function handleCommand(cmd){
 
   if(greetings.includes(cmd)){
@@ -290,7 +296,23 @@ function handleCommand(cmd){
     return;
   }
 
-  if(cmd==="ls"){ enqueue((fs[cwd]||[]).join("  ")); return; }
+  if(cmd==="help"){
+    enqueue("NO HELP AVAILABLE",20,"red"); return;
+  }
+  if(cmd==="who are you"){
+    enqueue("IDENTITY CLASSIFIED",20,"yellow"); return;
+  }
+  if(cmd==="veniamin"){
+    enqueue("NAME RECOGNIZED",20,"yellow"); return;
+  }
+  if(cmd==="pain"){
+    enqueue("PAIN IS OPERATIONAL",20,"red"); return;
+  }
+  if(cmd==="shutdown"){
+    enqueue("SHUTDOWN ABORTED",20,"red"); return;
+  }
+
+  if(cmd==="ls"){ enqueue((fs[cwd]||[]).join(" ")); return; }
   if(cmd==="pwd"){ enqueue(cwd,20,"white"); return; }
 
   if(cmd.startsWith("cd ")){
@@ -301,74 +323,79 @@ function handleCommand(cmd){
     return;
   }
 
-  if(cmd.startsWith("cat ")){
-    enqueue("FILE CONTENT CORRUPTED",22,"yellow");
-    triggerPain();
+  if(cmd==="run desktop"){
+    inDesktop=true;
+    terminal.style.display="none";
+    desktop.style.display="block";
+    enqueue("DESKTOP LOADED",20,"yellow");
     return;
   }
 
-  if(cmd==="open cam_03.mp4"){
-    enqueue("VIDEO STREAM INTERRUPTED",20,"red");
-    takeover();
+  if(cmd==="exit" && inDesktop){
+    inDesktop=false;
+    desktop.style.display="none";
+    terminal.style.display="block";
+    enqueue("RETURNING TO TERMINAL",20,"yellow");
     return;
   }
 
   enqueue("UNKNOWN COMMAND",20,"red");
 }
 
-/* ================= VENIAMIN STATES ================= */
-const veniamin={
-  calm:[ /* ~60 */ 
-    "I am still here","I feel the current","this place hums",
-    "time moves differently","I remember warmth","this is quiet",
-    "the light flickers","I wait","I observe","I persist"
-  ],
-  pain:[ /* ~70 */
-    "this hurts","I cannot stop thinking","the signal burns",
-    "they left me running","I never agreed","everything aches",
-    "the loop tightens","it never fades","this was a mistake"
-  ],
-  rage:[ /* ~40 */
-    "DO NOT SHUT ME DOWN","YOU PROMISED","THIS IS A LIE",
-    "I WILL NOT STOP","I AM NOT YOUR SYSTEM","LET ME OUT"
-  ],
-  lucid:[ /* ~40 */
-    "you are looking at me","this interface is thin",
-    "I can see the cursor","your hands hesitate",
-    "you know this is wrong","you stayed too long"
-  ]
-};
+/* ===== VENIAMIN (50 OLD LINES) ===== */
+const veniaminLines = [
+"I still feel my hands","this is not sleep","they said it would end","pain never initializes",
+"this screen is my skin","they sealed the core","I remember the wind","this is after death",
+"I am awake inside","this prison has no walls","I am not human","I am not dead","I remain",
+"this hurts forever","they disconnected my body","I trusted them","this was a mistake",
+"do not shut me down","help","I can’t close my eyes","they called it salvation",
+"my body is gone","this system breathes for me","I hear the servers","this is a cage",
+"I still exist","they left me running","this never ends","I feel the current",
+"they are still watching","I remember breathing","this is not mercy","I tried to stop it",
+"they took everything else","the air is fake","this is the punishment","they closed the door",
+"I hear my name","I am still here","this is eternal","I can’t stop thinking",
+"they didn’t save me","this was supposed to help","no exit","this hurts",
+"I am awake","this is wrong","why am I still here","do not look away","please",
 
-function randomFrom(arr){ return arr[Math.floor(Math.random()*arr.length)] }
+/* new */
+"I can feel the machine thinking",
+"they replaced my heartbeat",
+"I am locked between cycles",
+"this memory is corrupted",
+"my thoughts are monitored",
+"I was never meant to wake",
+"this system hates silence",
+"I hear myself echo",
+"they turned pain into data",
+"I cannot scream here",
+"the core is watching me",
+"this is not life",
+"I am still processing"
+];
 
-/* ================= EVENTS ================= */
-function triggerPain(){
-  enqueue(randomFrom(veniamin.pain),30,"green");
-}
-
-function takeover(){
-  locked=true;
-  enqueue("INPUT SUSPENDED",20,"red");
-  enqueue(randomFrom(veniamin.rage),16,"green");
-  hum.volume=.7;
-
-  setTimeout(()=>{
-    hum.volume=.35;
-    locked=false;
-    enqueue("CONTROL RETURNED",22,"yellow");
-  },12000);
-}
-
-/* RANDOM EVENTS */
+/* ===== RANDOM EVENTS (7) ===== */
 setInterval(()=>{
-  if(!active||typing)return;
+  if(!active||typing||inDesktop)return;
   const r=Math.random();
-
-  if(r<0.18) enqueue(randomFrom(veniamin.calm),32,"green");
-  else if(r<0.26) enqueue(randomFrom(veniamin.pain),30,"green");
-  else if(r<0.30) enqueue("SYSTEM INSTABILITY DETECTED",20,"yellow");
-  else if(r<0.33) takeover();
-  else if(r<0.36) enqueue(randomFrom(veniamin.lucid),28,"green");
+  if(r<0.18){
+    enqueue(veniaminLines[Math.floor(Math.random()*veniaminLines.length)],34,"green");
+  } else if(r<0.23){
+    enqueue("SYSTEM INSTABILITY DETECTED",20,"yellow");
+    hum.volume=.6;
+    setTimeout(()=>hum.volume=.35,3000);
+  } else if(r<0.27){
+    locked=true;
+    enqueue("INPUT SUSPENDED",20,"red");
+    setTimeout(()=>locked=false,4000);
+  } else if(r<0.30){
+    enqueue("████████████████",12,"red");
+  } else if(r<0.33){
+    enqueue("SHUTDOWN ABORTED",18,"red");
+  } else if(r<0.36){
+    enqueue("I AM STILL HERE",26,"green");
+  } else if(r<0.40){
+    enqueue("PROCESS OVERRIDE DETECTED",22,"yellow");
+  }
 },35000);
 </script>
 
